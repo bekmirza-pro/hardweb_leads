@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lidlar CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F4F1;--surface:#FFF;--surface2:#EFEFEB;--border:#E2E2DC;--border2:#D0D0C8;--text:#1A1A18;--text2:#6A6A64;--text3:#A8A8A0;--accent:#2563EB;--accent-bg:#EFF4FF;--green:#16A34A;--green-bg:#F0FDF4;--red:#DC2626;--red-bg:#FEF2F2;--amber:#D97706;--amber-bg:#FFFBEB;--purple:#7C3AED;--r:14px;--rs:8px;--rxs:6px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:15px;overscroll-behavior:none}
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-90px);background:var(--text);color:#fff;padding:11px 20px;border-radius:100px;font-size:13px;font-weight:500;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{background:var(--green)}#toast.err{background:var(--red)}#toast.warn{background:var(--amber)}
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px 28px;width:100%;max-width:380px}
+.login-logo{display:flex;align-items:center;gap:8px;margin-bottom:24px;justify-content:center}
+.login-dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.login-name{font-size:18px;font-weight:700;letter-spacing:-.4px}
+.login-title{font-size:20px;font-weight:700;margin-bottom:5px;text-align:center}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:22px;text-align:center}
+.lfield{margin-bottom:13px}
+.lfield label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.lfield input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.lfield input:focus{border-color:var(--accent);background:#fff}
+.btn-login{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;transition:opacity .15s}
+.btn-login:active{opacity:.85}.btn-login:disabled{opacity:.5;pointer-events:none}
+.login-status{font-size:12px;text-align:center;margin-top:14px;min-height:18px;color:var(--text3)}
+#app{display:none;flex-direction:column;height:100vh}
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;flex-shrink:0}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;height:54px}
+.hdr-logo{display:flex;align-items:center;gap:7px}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.hdr-dot.sync{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.hdr-pill{background:var(--surface2);color:var(--text2);padding:4px 11px;border-radius:100px;font-size:12px;font-weight:500}
+.btn-logout{background:transparent;border:1px solid var(--border);border-radius:100px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;font-family:inherit}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--text3);border:none;background:transparent;cursor:pointer;border-top:2px solid transparent;transition:color .15s;text-transform:uppercase;letter-spacing:.4px}
+.tab svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.active{color:var(--accent);border-top-color:var(--accent)}
+.scroll{flex:1;overflow-y:auto;padding:14px 14px 80px}
+.card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);margin-bottom:10px;overflow:hidden}
+.card-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;padding:14px 14px 0}
+.card-body{padding:12px 14px 14px}
+.field{margin-bottom:12px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);background:#fff}
+.field textarea{resize:none;min-height:90px;line-height:1.55}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236A6A64' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:13px;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s,transform .1s;letter-spacing:-.2px}
+.btn:active{transform:scale(.98);opacity:.85}.btn:disabled{opacity:.45;pointer-events:none}
+.btn-primary{background:var(--accent);color:#fff;margin-bottom:8px}
+.btn-ghost{background:transparent;color:var(--text2);border:1.5px solid var(--border)}
+.btn-green{background:var(--green);color:#fff}
+.btn-red{background:var(--red-bg);color:var(--red);border:1px solid #FCA5A5}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.stat-val{font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:3px}
+.stat.c-amber .stat-val{color:var(--amber)}.stat.c-green .stat-val{color:var(--green)}.stat.c-purple .stat-val{color:var(--purple)}
+.search-wrap{position:relative;margin-bottom:10px}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round}
+.search-input{width:100%;padding:11px 13px 11px 36px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none}
+.search-input:focus{border-color:var(--accent)}
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:12px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.fpill{flex-shrink:0;padding:6px 12px;border-radius:100px;font-size:12px;font-weight:500;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
+.fpill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.lcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;cursor:pointer}
+.lcard:active{opacity:.88}
+.lcard-top{padding:12px 14px;display:flex;align-items:flex-start;gap:10px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0}
+.lcard-info{flex:1;min-width:0}
+.lcard-name{font-size:14px;font-weight:600;letter-spacing:-.3px}
+.lcard-phone{font-size:12px;color:var(--text2);margin-top:1px}
+.lcard-body{padding:0 14px 12px}
+.lcard-note{font-size:12px;color:var(--text2);line-height:1.5;background:var(--surface2);border-radius:var(--rxs);padding:8px 10px;margin-bottom:8px}
+.lcard-meta{display:flex;flex-wrap:wrap;gap:5px}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600}
+.b-new{background:var(--accent-bg);color:#1D4ED8}.b-talking{background:var(--amber-bg);color:#92400E}
+.b-deal{background:var(--green-bg);color:#166534}.b-rejected{background:var(--red-bg);color:#991B1B}
+.b-recall{background:var(--surface2);color:var(--text2)}.b-recall.urgent{background:var(--red-bg);color:var(--red)}
+.b-gray{background:var(--surface2);color:var(--text2)}.b-date{background:transparent;color:var(--text3);font-size:10px}
+.offline-bar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--amber-bg);border:1px solid #FCD34D;border-radius:var(--rs);margin-bottom:10px;font-size:12px;color:#92400E;font-weight:500}
+.offline-bar.hidden{display:none}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200}
+.overlay.open{display:block}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-radius:20px 20px 0 0;z-index:201;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1)}
+.sheet.open{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 0}
+.sheet-hdr{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.sheet-title{font-size:16px;font-weight:700}
+.sheet-close{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sheet-close svg{width:14px;height:14px;stroke:var(--text2);fill:none;stroke-width:2.2;stroke-linecap:round}
+.sheet-body{padding:14px}
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:center;justify-content:center;padding:24px}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:var(--surface);border-radius:18px;padding:24px;width:100%;max-width:320px;text-align:center}
+.confirm-icon{font-size:36px;margin-bottom:12px}.confirm-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.confirm-msg{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:20px}
+.confirm-btns{display:flex;gap:8px}.confirm-btns .btn{margin:0}
+.fab{position:fixed;bottom:20px;right:16px;z-index:150;background:var(--green);color:#fff;border:none;border-radius:100px;padding:12px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:none;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(22,163,74,.3)}
+.fab svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.empty{text-align:center;padding:56px 20px}.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-t{font-size:16px;font-weight:600;margin-bottom:5px}.empty-s{font-size:13px;color:var(--text2)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border:none}
+.setting-label{font-size:14px;font-weight:500}.setting-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.setting-val{font-size:13px;color:var(--text2);font-weight:500}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo"><div class="login-dot"></div><span class="login-name">Lidlar CRM</span></div>
+    <div class="login-title">Kirish</div>
+    <div class="login-sub">Login va parol kiriting</div>
+    <div class="lfield"><label>Login</label><input id="l-user" type="text" placeholder="admin" autocomplete="username"></div>
+    <div class="lfield"><label>Parol</label><input id="l-pass" type="password" placeholder="••••••" autocomplete="current-password"></div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">Kirish</button>
+    <div class="login-status" id="login-status">Standart: admin / crm1234</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-inner">
+      <div class="hdr-logo">
+        <div class="hdr-dot" id="hdr-dot"></div>
+        <span class="hdr-title">Lidlar CRM</span>
+      </div>
+      <div class="hdr-right">
+        <span class="hdr-pill" id="hdr-count">0 lid</span>
+        <button class="btn-logout" onclick="doLogout()">Chiqish</button>
+      </div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('add',this)">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Qo'shish
+    </button>
+    <button class="tab" onclick="switchTab('leads',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Lidlar
+    </button>
+    <button class="tab" onclick="switchTab('settings',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Sozlamalar
+    </button>
+  </div>
+
+  <!-- ADD -->
+  <div id="panel-add" class="scroll">
+    <div class="offline-bar hidden" id="offline-bar">⚠️ Internet yo'q — lid lokal saqlanadi</div>
+    <div class="card">
+      <div class="card-lbl">Kontakt ma'lumotlari</div>
+      <div class="card-body">
+        <div class="field"><label>Ism Familiya *</label><input id="f-name" type="text" placeholder="Alisher Karimov"></div>
+        <div class="field"><label>Telefon *</label><input id="f-phone" type="tel" placeholder="+998 90 123 45 67"></div>
+        <div class="field"><label>Kompaniya</label><input id="f-company" type="text" placeholder="Savdo MChJ"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Bitim ma'lumotlari</div>
+      <div class="card-body">
+        <div class="g2">
+          <div class="field"><label>Kategoriya</label><select id="f-product"></select></div>
+          <div class="field"><label>Holat</label>
+            <select id="f-status">
+              <option value="Yangi">🔵 Yangi</option><option value="Muloqot">🟡 Muloqot</option>
+              <option value="Bitim">🟢 Bitim</option><option value="Rad etildi">🔴 Rad etildi</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Manba</label>
+            <select id="f-source"><option>Instagram</option><option>Telegram</option><option>Website</option><option>Tavsiya</option><option>Boshqa</option></select>
+          </div>
+          <div class="field"><label>Summa (so'm)</label><input id="f-amount" type="number" placeholder="0"></div>
+        </div>
+        <div class="field"><label>📅 Qayta bog'lanish</label><input id="f-recall" type="date"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Telefonda nima dedi</div>
+      <div class="card-body">
+        <div class="field"><textarea id="f-note" placeholder="Suhbat qisqacha mazmuni, keyingi qadam..."></textarea></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="submit-btn" onclick="submitLead()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>Saqlash
+    </button>
+    <button class="btn btn-ghost" onclick="clearForm()">Tozalash</button>
+  </div>
+
+  <!-- LEADS -->
+  <div id="panel-leads" class="scroll" style="display:none">
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Jami lidlar</div></div>
+      <div class="stat c-amber"><div class="stat-val" id="s-recall">0</div><div class="stat-lbl">Bugun bog'lanish</div></div>
+      <div class="stat c-green"><div class="stat-val" id="s-deal">0</div><div class="stat-lbl">Bitimlar</div></div>
+      <div class="stat c-purple"><div class="stat-val" id="s-amount">0</div><div class="stat-lbl">Jami (mln)</div></div>
+    </div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" id="search-inp" placeholder="Ism, telefon, kompaniya..." oninput="renderLeads()">
+    </div>
+    <div class="filters">
+      <div class="fpill active" data-f="all" onclick="setFilter(this)">Hammasi</div>
+      <div class="fpill" data-f="Yangi" onclick="setFilter(this)">🔵 Yangi</div>
+      <div class="fpill" data-f="Muloqot" onclick="setFilter(this)">🟡 Muloqot</div>
+      <div class="fpill" data-f="Bitim" onclick="setFilter(this)">🟢 Bitim</div>
+      <div class="fpill" data-f="Rad etildi" onclick="setFilter(this)">🔴 Rad etildi</div>
+      <div class="fpill" data-f="recall" onclick="setFilter(this)">📅 Bugun</div>
+    </div>
+    <div id="leads-list"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="panel-settings" class="scroll" style="display:none">
+    <div class="card">
+      <div class="card-lbl">Hisob</div>
+      <div class="card-body">
+        <div class="setting-row"><div class="setting-label">Login</div><div class="setting-val" id="s-username">—</div></div>
+        <div class="setting-row"><div class="setting-label">Jami lidlar</div><div class="setting-val" id="s-total-s">0</div></div>
+        <div class="setting-row" style="border:none"><div class="setting-label">Server holati</div><div class="setting-val" id="s-server">—</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Parolni o'zgartirish</div>
+      <div class="card-body">
+        <div class="field"><label>Joriy parol</label><input id="p-old" type="password" placeholder="••••••"></div>
+        <div class="field"><label>Yangi parol</label><input id="p-new" type="password" placeholder="••••••"></div>
+        <div class="field"><label>Takrorlang</label><input id="p-rep" type="password" placeholder="••••••"></div>
+        <button class="btn btn-primary" onclick="changePwd()" style="margin-top:4px">Parolni saqlash</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Ma'lumotlar</div>
+      <div class="card-body">
+        <button class="btn btn-green" onclick="exportCSV()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Excel (CSV) yuklab olish
+        </button>
+        <button class="btn btn-ghost" style="margin-top:8px" onclick="loadLeads()">🔄 Serverdan yangilash</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="fab" id="fab-export" onclick="exportCSV()">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel
+  </button>
+</div>
+
+<!-- EDIT SHEET -->
+<div class="overlay" id="edit-overlay" onclick="closeEdit()"></div>
+<div class="sheet" id="edit-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <span class="sheet-title">Lidni tahrirlash</span>
+    <button class="sheet-close" onclick="closeEdit()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="sheet-body">
+    <input type="hidden" id="e-id">
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-lbl">Kontakt</div>
+      <div class="card-body">
+        <div class="field"><label>Ism Familiya</label><input id="e-name" type="text"></div>
+        <div class="field"><label>Telefon</label><input id="e-phone" type="tel"></div>
+        <div class="field"><label>Kompaniya</label><input id="e-company" type="text"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-lbl">Bitim</div>
+      <div class="card-body">
+        <div class="g2">
+          <div class="field"><label>Kategoriya</label><select id="e-product"></select></div>
+          <div class="field"><label>Holat</label>
+            <select id="e-status">
+              <option value="Yangi">🔵 Yangi</option><option value="Muloqot">🟡 Muloqot</option>
+              <option value="Bitim">🟢 Bitim</option><option value="Rad etildi">🔴 Rad etildi</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Manba</label>
+            <select id="e-source"><option>Instagram</option><option>Telegram</option><option>Website</option><option>Tavsiya</option><option>Boshqa</option></select>
+          </div>
+          <div class="field"><label>Summa</label><input id="e-amount" type="number"></div>
+        </div>
+        <div class="field"><label>📅 Qayta bog'lanish</label><input id="e-recall" type="date"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-lbl">Telefonda nima dedi</div>
+      <div class="card-body"><div class="field"><textarea id="e-note"></textarea></div></div>
+    </div>
+    <button class="btn btn-green" onclick="saveLead()">Saqlash</button>
+    <button class="btn btn-red" style="margin-top:8px" onclick="askDelete()">O'chirish</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="closeEdit()">Bekor qilish</button>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="confirm-del">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">O'chirishni tasdiqlang</div>
+    <div class="confirm-msg">Bu lid o'chib ketadi va qayta tiklanmaydi.</div>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" onclick="cancelDelete()" style="margin:0">Yo'q</button>
+      <button class="btn btn-red" onclick="doDelete()" style="margin:0">Ha, o'chirish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== PRODUCT OPTIONS ==========
+const PROD_HTML = `<option value="">Tanlang...</option>
+<optgroup label="🥩 Oziq-ovqat"><option>Oziq-ovqat — Go'sht va baliq</option><option>Oziq-ovqat — Non va unli</option><option>Oziq-ovqat — Meva va sabzavot</option><option>Oziq-ovqat — Sut mahsulotlari</option><option>Oziq-ovqat — Ichimliklar</option><option>Oziq-ovqat — Quruq mahsulotlar</option><option>Oziq-ovqat — Boshqa</option></optgroup>
+<optgroup label="📱 Texnika"><option>Texnika — Telefon va aksessuar</option><option>Texnika — Kompyuter va noutbuk</option><option>Texnika — Maishiy texnika</option><option>Texnika — TV va audio</option><option>Texnika — Boshqa</option></optgroup>
+<optgroup label="🏗️ Qurilish"><option>Qurilish — Materiallar</option><option>Qurilish — Santexnika</option><option>Qurilish — Elektr</option><option>Qurilish — Bo'yoq va suvaq</option><option>Qurilish — Deraza va eshik</option><option>Qurilish — Pol va shirvon</option><option>Qurilish — Boshqa</option></optgroup>
+<optgroup label="🛒 Savdo-sotiq"><option>Savdo — Ulgurji</option><option>Savdo — Chakana</option><option>Savdo — Online</option><option>Savdo — Import/Eksport</option><option>Savdo — Boshqa</option></optgroup>
+<optgroup label="🏠 Ko'chmas mulk"><option>Mulk — Kvartira sotish</option><option>Mulk — Uy sotish</option><option>Mulk — Ijara</option><option>Mulk — Tijorat mulki</option></optgroup>
+<optgroup label="🚗 Transport"><option>Transport — Avtomobil</option><option>Transport — Ehtiyot qismlar</option><option>Transport — Yuk tashish</option></optgroup>
+<optgroup label="⚙️ Xizmatlar"><option>Xizmat — Ta'mirlash</option><option>Xizmat — Dizayn</option><option>Xizmat — Konsalting</option><option>Xizmat — Boshqa</option></optgroup>
+<option value="Boshqa">Boshqa</option>`;
+
+['f-product','e-product'].forEach(id => {
+  var el = document.getElementById(id);
+  if (el) el.innerHTML = PROD_HTML;
+});
+
+// ========== CONFIG ==========
+const API_URL = '/.netlify/functions/leads';
+const LOCAL_PASS_KEY = 'crm_pass';
+const SESSION_KEY = 'crm_session';
+const CACHE_KEY = 'crm_cache';
+const QUEUE_KEY = 'crm_queue';
+
+let leads = [];
+let currentFilter = 'all';
+
+function getPass() { return sessionStorage.getItem(SESSION_KEY) || ''; }
+function getLocalPass() { return localStorage.getItem(LOCAL_PASS_KEY) || 'crm1234'; }
+
+// ========== API ==========
+async function api(method, body) {
+  var res = await fetch(API_URL, {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth': getPass()
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    var err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Xato: ' + res.status);
+  }
+  return res.json();
+}
+
+// ========== AUTH ==========
+async function doLogin() {
+  var u = document.getElementById('l-user').value.trim();
+  var p = document.getElementById('l-pass').value;
+  if (!u || !p) { setStatus('Login va parol kiriting', true); return; }
+  if (u !== 'admin') { setStatus('Login noto\'g\'ri!', true); return; }
+  if (p !== getLocalPass()) { setStatus('Parol noto\'g\'ri!', true); return; }
+
+  var btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Kirilmoqda...';
+  setStatus('Server tekshirilmoqda...');
+
+  sessionStorage.setItem(SESSION_KEY, p);
+
+  try {
+    await api('GET');
+    setStatus('');
+    showApp(u);
+  } catch(e) {
+    // Offline bo'lsa ham kirsin
+    if (e.message && e.message.includes('fetch')) {
+      setStatus('⚠️ Offline rejimda kirdi', false);
+      showApp(u);
+    } else {
+      sessionStorage.removeItem(SESSION_KEY);
+      setStatus('Server xatosi: ' + e.message, true);
+    }
+  }
+  btn.disabled = false; btn.textContent = 'Kirish';
+}
+
+function setStatus(msg, isErr) {
+  var el = document.getElementById('login-status');
+  el.textContent = msg || 'Standart: admin / crm1234';
+  el.style.color = isErr ? 'var(--red)' : 'var(--text3)';
+}
+
+function doLogout() {
+  sessionStorage.clear();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('l-pass').value = '';
+  setStatus('');
+}
+
+function showApp(u) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+  document.getElementById('app').style.height = '100vh';
+  document.getElementById('s-username').textContent = u;
+  loadLeads();
+  processQueue();
+}
+
+window.addEventListener('online', processQueue);
+
+window.onload = () => {
+  var s = sessionStorage.getItem(SESSION_KEY);
+  if (s) { showApp('admin'); }
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    var ls = document.getElementById('login-screen');
+    if (ls.style.display !== 'none') doLogin();
+  }
+});
+
+// ========== TOAST ==========
+function toast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = type || '';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ========== TABS ==========
+function switchTab(t, btn) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  btn.classList.add('active');
+  ['add','leads','settings'].forEach(id => {
+    document.getElementById('panel-'+id).style.display = id===t ? 'block' : 'none';
+  });
+  document.getElementById('fab-export').style.display = t==='leads' ? 'flex' : 'none';
+  if (t === 'leads') { loadLeads(); }
+  if (t === 'settings') document.getElementById('s-total-s').textContent = leads.length;
+}
+
+// ========== LOAD LEADS ==========
+function setSyncing(on) {
+  document.getElementById('hdr-dot').className = on ? 'hdr-dot sync' : 'hdr-dot';
+}
+
+async function loadLeads() {
+  setSyncing(true);
+  try {
+    var data = await api('GET');
+    leads = Array.isArray(data) ? data : [];
+    localStorage.setItem(CACHE_KEY, JSON.stringify(leads));
+    document.getElementById('s-server').textContent = '🟢 Ulangan';
+    document.getElementById('offline-bar').classList.add('hidden');
+  } catch {
+    var c = localStorage.getItem(CACHE_KEY);
+    leads = c ? JSON.parse(c) : [];
+    document.getElementById('s-server').textContent = '🔴 Offline';
+    document.getElementById('offline-bar').classList.remove('hidden');
+  }
+  setSyncing(false);
+  updateHeader();
+  renderLeads();
+}
+
+// ========== OFFLINE QUEUE ==========
+function addQueue(action, data) {
+  var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+  q.push({ action, data });
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+}
+
+async function processQueue() {
+  var q = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+  if (!q.length) return;
+  var remaining = [];
+  for (var item of q) {
+    try {
+      if (item.action === 'add') await api('POST', item.data);
+      else if (item.action === 'update') await api('PUT', item.data);
+      else if (item.action === 'delete') await api('DELETE', item.data);
+    } catch { remaining.push(item); }
+  }
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
+  if (remaining.length < q.length) { toast('✓ Offline saqlangan lidlar yuborildi!', 'ok'); loadLeads(); }
+}
+
+// ========== ADD LEAD ==========
+async function submitLead() {
+  var name = document.getElementById('f-name').value.trim();
+  var phone = document.getElementById('f-phone').value.trim();
+  if (!name || !phone) { toast('Ism va telefon majburiy!', 'err'); return; }
+
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
+
+  var lead = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('uz-UZ'),
+    dateRaw: new Date().toISOString(),
+    name, phone,
+    company: document.getElementById('f-company').value.trim(),
+    product: document.getElementById('f-product').value,
+    status: document.getElementById('f-status').value,
+    source: document.getElementById('f-source').value,
+    amount: document.getElementById('f-amount').value,
+    recall: document.getElementById('f-recall').value,
+    note: document.getElementById('f-note').value.trim()
+  };
+
+  try {
+    await api('POST', lead);
+    toast('✓ Saqlandi!', 'ok');
+  } catch {
+    leads.unshift(lead);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(leads));
+    addQueue('add', lead);
+    toast('💾 Offline saqlandi', 'warn');
+  }
+
+  clearForm();
+  await loadLeads();
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> Saqlash';
+}
+
+function clearForm() {
+  ['f-name','f-phone','f-company','f-amount','f-recall','f-note'].forEach(id => document.getElementById(id).value = '');
+  ['f-product','f-status','f-source'].forEach(id => document.getElementById(id).selectedIndex = 0);
+}
+
+// ========== RENDER ==========
+function setFilter(el) {
+  document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter = el.dataset.f;
+  renderLeads();
+}
+
+function renderLeads() {
+  var today = new Date().toISOString().slice(0,10);
+  var q = (document.getElementById('search-inp').value || '').toLowerCase();
+  var f = currentFilter;
+
+  var filtered = leads.filter(l => {
+    var mq = !q || (l.name||'').toLowerCase().includes(q) || (l.phone||'').includes(q) || (l.company||'').toLowerCase().includes(q);
+    var mf = f==='all' || (f==='recall' ? (l.recall&&l.recall<=today) : l.status===f);
+    return mq && mf;
+  });
+
+  document.getElementById('s-total').textContent = leads.length;
+  document.getElementById('s-recall').textContent = leads.filter(l=>l.recall&&l.recall<=today).length;
+  document.getElementById('s-deal').textContent = leads.filter(l=>l.status==='Bitim').length;
+  var amt = leads.reduce((s,l)=>s+(Number(l.amount)||0),0);
+  document.getElementById('s-amount').textContent = (amt/1000000).toFixed(1);
+
+  var sc = {Yangi:'b-new',Muloqot:'b-talking',Bitim:'b-deal','Rad etildi':'b-rejected'};
+  var list = document.getElementById('leads-list');
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">'+(q||f!=='all'?'🔍':'📋')+'</div><div class="empty-t">'+(q||f!=='all'?'Topilmadi':'Hali lid yo\'q')+'</div><div class="empty-s">'+(q||f!=='all'?'Filterni o\'zgartiring':'Qo\'shish tabidan lid kiriting')+'</div></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(l => {
+    var initials = (l.name||'').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    var recallHtml = '';
+    if (l.recall) {
+      var urg = l.recall <= today;
+      recallHtml = `<span class="badge b-recall ${urg?'urgent':''}">📅 ${fmtDate(l.recall)}${urg?' — Bugun!':''}</span>`;
+    }
+    return `<div class="lcard" onclick="openEdit(${l.id})">
+      <div class="lcard-top">
+        <div class="avatar">${initials}</div>
+        <div class="lcard-info">
+          <div class="lcard-name">${l.name}</div>
+          <div class="lcard-phone">${l.phone}${l.company?' · '+l.company:''}</div>
+        </div>
+        <span class="badge ${sc[l.status]||'b-new'}">${l.status}</span>
+      </div>
+      ${l.note||recallHtml||l.product||l.amount?`<div class="lcard-body">
+        ${l.note?`<div class="lcard-note">${l.note}</div>`:''}
+        <div class="lcard-meta">
+          ${recallHtml}
+          ${l.product?`<span class="badge b-gray">${l.product}</span>`:''}
+          ${l.amount?`<span class="badge b-gray">${Number(l.amount).toLocaleString()} so'm</span>`:''}
+          <span class="badge b-date">${l.date}</span>
+        </div>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  var p = d.split('-');
+  return p[2]+'.'+p[1]+'.'+p[0];
+}
+
+function updateHeader() {
+  document.getElementById('hdr-count').textContent = leads.length + ' lid';
+}
+
+// ========== EDIT ==========
+function openEdit(id) {
+  var l = leads.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('e-id').value = id;
+  document.getElementById('e-name').value = l.name || '';
+  document.getElementById('e-phone').value = l.phone || '';
+  document.getElementById('e-company').value = l.company || '';
+  document.getElementById('e-amount').value = l.amount || '';
+  document.getElementById('e-recall').value = l.recall || '';
+  document.getElementById('e-note').value = l.note || '';
+  setSel('e-product', l.product);
+  setSel('e-status', l.status);
+  setSel('e-source', l.source);
+  document.getElementById('edit-overlay').classList.add('open');
+  document.getElementById('edit-sheet').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function setSel(id, val) {
+  var sel = document.getElementById(id);
+  for (var i=0; i<sel.options.length; i++) {
+    if (sel.options[i].value===val || sel.options[i].text===val) { sel.selectedIndex=i; return; }
+  }
+}
+
+function closeEdit() {
+  document.getElementById('edit-overlay').classList.remove('open');
+  document.getElementById('edit-sheet').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function saveLead() {
+  var id = parseInt(document.getElementById('e-id').value);
+  var original = leads.find(x => x.id === id);
+  if (!original) return;
+  var updated = { ...original,
+    name: document.getElementById('e-name').value.trim(),
+    phone: document.getElementById('e-phone').value.trim(),
+    company: document.getElementById('e-company').value.trim(),
+    product: document.getElementById('e-product').value,
+    status: document.getElementById('e-status').value,
+    source: document.getElementById('e-source').value,
+    amount: document.getElementById('e-amount').value,
+    recall: document.getElementById('e-recall').value,
+    note: document.getElementById('e-note').value.trim()
+  };
+  try {
+    await api('PUT', updated);
+    toast('✓ Yangilandi!', 'ok');
+  } catch {
+    var idx = leads.findIndex(x=>x.id===id);
+    if (idx>-1) leads[idx] = updated;
+    localStorage.setItem(CACHE_KEY, JSON.stringify(leads));
+    addQueue('update', updated);
+    toast('💾 Offline yangilandi', 'warn');
+  }
+  closeEdit();
+  await loadLeads();
+}
+
+function askDelete() { document.getElementById('confirm-del').classList.add('open'); }
+function cancelDelete() { document.getElementById('confirm-del').classList.remove('open'); }
+
+async function doDelete() {
+  var id = parseInt(document.getElementById('e-id').value);
+  try {
+    await api('DELETE', { id });
+    toast('O\'chirildi', 'warn');
+  } catch {
+    leads = leads.filter(x => x.id !== id);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(leads));
+    addQueue('delete', { id });
+    toast('💾 Offline o\'chirildi', 'warn');
+  }
+  cancelDelete(); closeEdit();
+  await loadLeads();
+}
+
+// ========== PASSWORD ==========
+function changePwd() {
+  var old = document.getElementById('p-old').value;
+  var nw = document.getElementById('p-new').value;
+  var rep = document.getElementById('p-rep').value;
+  if (old !== getLocalPass()) { toast('Joriy parol noto\'g\'ri!', 'err'); return; }
+  if (!nw || nw.length < 3) { toast('Kamida 3 ta belgi!', 'err'); return; }
+  if (nw !== rep) { toast('Parollar mos emas!', 'err'); return; }
+  localStorage.setItem(LOCAL_PASS_KEY, nw);
+  sessionStorage.setItem(SESSION_KEY, nw);
+  ['p-old','p-new','p-rep'].forEach(id => document.getElementById(id).value = '');
+  toast('✓ Parol o\'zgartirildi!', 'ok');
+}
+
+// ========== EXPORT ==========
+function exportCSV() {
+  if (!leads.length) { toast('Lid yo\'q!', 'err'); return; }
+  var BOM = '\uFEFF';
+  var header = ['Sana','Ism','Telefon','Kompaniya','Kategoriya','Holat','Manba','Summa','Qayta bog\'lanish','Izoh'];
+  var rows = leads.map(l=>[l.date,l.name,l.phone,l.company||'',l.product||'',l.status||'',l.source||'',l.amount||'',l.recall?fmtDate(l.recall):'',(l.note||'').replace(/\n/g,' ')].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  var csv = BOM+header.join(',')+'\n'+rows.join('\n');
+  var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Lidlar_'+new Date().toLocaleDateString('uz-UZ').replace(/\//g,'-')+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  toast('✓ Excel yuklab olindi!', 'ok');
+}
+</script>
+</body>
+</html>
